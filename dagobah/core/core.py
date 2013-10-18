@@ -660,7 +660,10 @@ class Task(object):
         self.command = command
         self.name = name
 
-        self.host_id = int(host_id)
+        if host_id != None:    
+            self.host_id = int(host_id)
+        else:
+            self.host_id = host_id
         self.remote_process = None
         
         self.process = None
@@ -760,6 +763,8 @@ class Task(object):
         except Exception as e:
             stderr.value = str(e)
             exit_status.value = 1
+        finally:
+            client.close()
 
 
     def check_complete(self):
@@ -857,8 +862,22 @@ class Task(object):
             return self._tail_string(last_run['tasks'][self.name][stream],
                                      num_lines)
         else:
+            return target
             return self._tail_temp_file(target, num_lines)
 
+
+    def get_log_history(self):
+        history = self.backend.get_run_log_history(self.parent_job.job_id, self.name)
+        if not history:
+            return None
+        return history
+
+
+    def get_log(self, log_id):
+        log = self.backend.get_run_log(self.parent_job.job_id, self.name, log_id)
+        if not log:
+            return None
+        return log
 
     def get_stdout(self):
         """ Returns the entire stdout output of this process. """

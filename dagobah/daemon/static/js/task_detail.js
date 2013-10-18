@@ -1,3 +1,12 @@
+
+var historyTableTemplate = Handlebars.compile($('#history-table-template').html());
+var historyNameTemplate = Handlebars.compile($('#history-name-template').html());
+
+Handlebars.registerPartial('historyId', historyNameTemplate);
+
+var historyData = [];
+loadHistoryTable();
+
 $('#save-soft-timeout').click(function() {
 
 	$.ajax({
@@ -119,3 +128,69 @@ $('#tail-stderr').click(function() {
 	);
 
 });
+
+
+function loadHistoryTable() {
+
+	$.getJSON($SCRIPT_ROOT + '/api/logs',
+		  {
+			  job_name: jobName,
+			  task_name: taskName,
+		  },
+		  function(data) {
+		  	  data = data.result;
+		  	  renderHistoryTable(data);
+		  } 
+	);
+}
+
+
+function renderHistoryTable(data){
+		if (data.length === 0) {
+			setTimeout(renderHistoryTable, 100);
+			return;
+		}
+
+		$('#history-body').empty();
+
+		for (var i = 0; i < data.length; i++) {
+			var thisJob = data[i];
+			$('#history-body').append(
+				historyTableTemplate({
+					historyId: thisJob.log_id,
+					logURL: $SCRIPT_ROOT + '/job/' + thisJob.job_id + '/' + taskName + '/' + thisJob.log_id
+				})
+			);
+		}
+
+		$('#history-body').children().each(function() {
+			var log_id = $(this).attr('data-log');
+			for (var i = 0; i < data.length; i++) {
+				if (data[i].log_id == log_id) {
+					var job = data[i];
+					break;
+				}
+			}
+
+			$(this).find('[data-attr]').each(function() {
+				var attr = $(this).attr('data-attr');
+				var transforms = $(this).attr('data-transform') || '';
+				transforms = transforms.split(' ');
+
+				var descendants = $(this).children().clone(true);
+				$(this).text('');
+				if (job[attr] !== null) {
+					$(this).text(job[attr]);
+				}
+
+				for (var i = 0; i < transforms.length; i++) {
+					var transform = transforms[i];
+					applyTransformation($(this), job[attr], transform);
+				}
+
+				$(this).append(descendants);
+
+			});
+
+		});
+}

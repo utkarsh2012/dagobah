@@ -3,7 +3,7 @@
 import StringIO
 import json
 
-from flask import request, abort, send_file
+from flask import request, abort, send_file, jsonify
 from flask_login import login_required
 
 from dagobah.daemon.daemon import app
@@ -30,6 +30,43 @@ def get_job():
 
     job = dagobah.get_job(args['job_name'])
     return job._serialize()
+
+
+@app.route('/api/logs', methods=['GET'])
+@login_required
+@api_call
+def get_log_history():
+    args = dict(request.args)
+    if not validate_dict(args,
+                         required=['job_name', 'task_name'],
+                         job_name=str,
+                         task_name=str):
+        abort(400)
+
+    job = dagobah.get_job(args['job_name'])
+    task = job.tasks.get(args['task_name'], None)
+    if not task:
+        abort(400)
+    return task.get_log_history()
+
+
+@app.route('/api/log', methods=['GET'])
+@login_required
+@api_call
+def get_log():
+    args = dict(request.args)
+    if not validate_dict(args,
+                         required=['job_name', 'task_name', 'log_id'],
+                         job_name=str,
+                         task_name=str,
+                         log_id=int):
+        abort(400)
+
+    job = dagobah.get_job(args['job_name'])
+    task = job.tasks.get(args['task_name'], None)
+    if not task:
+        abort(400)
+    return task.get_log(args['log_id'])
 
 
 @app.route('/api/head', methods=['GET'])
@@ -444,3 +481,5 @@ def delete_host():
         abort(400)
 
     dagobah.delete_host(args['host_name'])
+
+
