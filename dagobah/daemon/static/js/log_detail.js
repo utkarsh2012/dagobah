@@ -1,6 +1,6 @@
-stdoutLog('stdout');
+stdoutLog('stdout', true);
 
-function stdoutLog(stream) {
+function stdoutLog(stream, onload) {
 	$.getJSON($SCRIPT_ROOT + '/api/log',
 		  {
 			  job_name: jobName,
@@ -8,7 +8,11 @@ function stdoutLog(stream) {
 			  log_id: logId
 		  },
 		  function(data) {
-			  showLogText(stream, data['result'][stream], data['result']['start_time']);
+		  	  if(typeof(onload)==='undefined') a = false;
+			  showLogText(stream, data['result'][stream]);
+			  if (onload == true){ 
+			 	 $('#header').text($('#header').text() + ' - ' + data['result']['start_time']);
+			  }
 		  }
 	);
 }
@@ -22,10 +26,9 @@ $('#stdout').click(function() {
 	stdoutLog('stdout')
 });
 
-function showLogText(logType, value, start_time) {
+function showLogText(logType, value) {
 	$('#log-detail').text(value);
 	$('#log-detail').scrollTop(0);
 	$('#log-detail').removeClass('hidden');
 	$('#log-type').text(logType);
-	$('#header').text($('#header').text() + ' - ' + start_time);
 }
