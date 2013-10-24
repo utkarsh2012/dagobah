@@ -501,6 +501,23 @@ $('#save-schedule').click(function() {
 
 });
 
+function cronTimeZone () {
+	var cdate = new Date();
+ 	var cron_schedule = $('#cron-schedule').val();
+ 	var hour = cron_schedule.match(/[0-9]?[0-9]\s([0-9]?[0-9])/)[1];
+ 	var newTime = parseInt(hour);
+ 	if (gmt) {
+ 		newTime = newTime - (cdate.getTimezoneOffset() /  60);
+ 		if (newTime < 0) {
+ 			newTime = newTime + 24;
+ 		}
+ 	} else {
+ 		newTime = (newTime + (cdate.getTimezoneOffset() /  60)) % 24;
+ 	}
+ 	return cron_schedule.replace(hour, newTime);
+}
+}
+
 $('#start-job').click(function() {
 
 	if (!job.loaded) {
