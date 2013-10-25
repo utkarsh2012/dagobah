@@ -36,6 +36,9 @@ var fieldTemplateMap = {
 function runWhenJobLoaded() {
 	if (typeof job != 'undefined' && job.loaded === true) {
 		resetTasksTable();
+		var element =document.getElementById('cron-schedule');
+		var cronSchedule = element.getAttribute("data-gmtValue");
+		$('#cron-schedule').val(convertCronTimeZone(fromGmt=true, cronSchedule));
 		setInterval(updateJobStatusViews, 500);
 		setInterval(updateJobNextRun, 500);
 		setInterval(updateTasksTable, 500);
@@ -481,12 +484,15 @@ $('#save-schedule').click(function() {
 		return;
 	}
 
+	var cronSchedule = $('#cron-schedule').val();
+	cronSchedule = convertCronTimeZone(fromGmt=false, cronSchedule);
+
 	$.ajax({
 		type: 'POST',
 		url: $SCRIPT_ROOT + '/api/schedule_job',
 		data: {
 			job_name: job.name,
-			cron_schedule: $('#cron-schedule').val()
+			cron_schedule: cronSchedule
 		},
 		dataType: 'json',
 		success: function () {
@@ -501,22 +507,29 @@ $('#save-schedule').click(function() {
 
 });
 
-function cronTimeZone () {
+
+function convertCronTimeZone(fromGmt, cronSchedule) {
 	var cdate = new Date();
- 	var cron_schedule = $('#cron-schedule').val();
- 	var hour = cron_schedule.match(/[0-9]?[0-9]\s([0-9]?[0-9])/)[1];
- 	var newTime = parseInt(hour);
- 	if (gmt) {
- 		newTime = newTime - (cdate.getTimezoneOffset() /  60);
- 		if (newTime < 0) {
- 			newTime = newTime + 24;
+	var scheduleSplit = cronSchedule.split(" ");
+	var hour = parseInt(scheduleSplit[1]);
+	if (fromGmt) {
+		hour = hour - (cdate.getTimezoneOffset() /  60);
+ 		if (hour < 0) {
+ 			hour = newTime + 24;
  		}
  	} else {
- 		newTime = (newTime + (cdate.getTimezoneOffset() /  60)) % 24;
- 	}
- 	return cron_schedule.replace(hour, newTime);
+ 		var offset = cdate.getTimezoneOffset() /  60;
+ 		hour = (hour + offset) % 24;
+	}
+	scheduleSplit[1] = hour;
+	var result = scheduleSplit[0];
+	for (var i = 1; i < scheduleSplit.length; i++){
+		result = result + " " + scheduleSplit[i];
+	}
+	return result;
 }
-}
+
+
 
 $('#start-job').click(function() {
 
