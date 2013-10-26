@@ -512,6 +512,9 @@ function convertCronTimeZone(fromGmt, cronSchedule) {
 	var cdate = new Date();
 	var scheduleSplit = cronSchedule.split(" ");
 	var hour = parseInt(scheduleSplit[1]);
+	if (isNaN(hour)) {
+		return cronSchedule;
+	}
 	if (fromGmt) {
 		hour = hour - (cdate.getTimezoneOffset() /  60);
  		if (hour < 0) {
