@@ -215,6 +215,7 @@ class SQLiteBackend(BaseBackend):
         logs = self.session.query(DagobahLog).\
             filter_by(job_id=job_id).\
             order_by(DagobahLog.save_date.desc()).\
+            limit(10).\
             all()
         result = []
         for log in logs:
