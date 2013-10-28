@@ -3,7 +3,7 @@
 import StringIO
 import json
 
-from flask import request, abort, send_file, jsonify
+from flask import request, abort, send_file
 from flask_login import login_required
 
 from dagobah.daemon.daemon import app
