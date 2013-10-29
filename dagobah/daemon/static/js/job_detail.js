@@ -525,7 +525,9 @@ function convertCronTimeZone(fromGmt, cronSchedule) {
  		hour = hour + offset;
  		if (hour >= 24) { 	// double check the =
  			hour = hour % 24;
- 			scheduleSplit[4] = parseInt(scheduleSplit[4]) + 1
+ 			if (scheduleSplit[4] != "*") {
+ 				scheduleSplit[4] = parseInt(scheduleSplit[4]) + 1
+ 			}
  		}
 	}
 	scheduleSplit[1] = hour;
