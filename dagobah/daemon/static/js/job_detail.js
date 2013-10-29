@@ -518,11 +518,15 @@ function convertCronTimeZone(fromGmt, cronSchedule) {
 	if (fromGmt) {
 		hour = hour - (cdate.getTimezoneOffset() /  60);
  		if (hour < 0) {
- 			hour = newTime + 24;
+ 			hour = hour + 24;
  		}
  	} else {
  		var offset = cdate.getTimezoneOffset() /  60;
- 		hour = (hour + offset) % 24;
+ 		hour = hour + offset;
+ 		if (hour >= 24) { 	// double check the =
+ 			hour = hour % 24;
+ 			scheduleSplit[4] = parseInt(scheduleSplit[4]) + 1
+ 		}
 	}
 	scheduleSplit[1] = hour;
 	var result = scheduleSplit[0];
