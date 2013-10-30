@@ -659,11 +659,7 @@ class Task(object):
         self.event_handler = self.parent_job.event_handler
         self.command = command
         self.name = name
-
-        if host_id != None:    
-            self.host_id = int(host_id)
-        else:
-            self.host_id = host_id
+        self.host_id = host_id
         self.remote_process = None
         
         self.process = None
@@ -699,8 +695,6 @@ class Task(object):
         self.parent_job.commit()
 
     def set_host_id(self, host_id):
-        if not isinstance(host_id, (int, float)) or host_id < 0:
-            raise ValueError('host_id must be a non-negative number')
         self.host_id = host_id
         self.parent_job.commit()
 
@@ -722,16 +716,8 @@ class Task(object):
         """ Begin execution of this task. """
         self.reset()
         if self.host_id:
-            host = [host for host in self.parent_job.parent.hosts if host.id==self.host_id]
-            self.stdout = Manager().Value(unicode, '')
-            self.stderr = Manager().Value(unicode, '')
-            self.remote_exit_status = Manager().Value('i', -1)
-
-            self.remote_process = Process(target=self.remote_ssh, args=[
-                                          self.stdout, self.stderr, 
-                                          self.remote_exit_status,
-                                          host[0].name])
-            self.remote_process.start()
+            host = [host for host in self.parent_job.parent.hosts if str(host.id)==str(self.host_id)]
+            self.remote_ssh(host[0].name)
         else:
             self.process = subprocess.Popen(self.command,
                                             shell=True,
@@ -742,56 +728,40 @@ class Task(object):
         self._start_check_timer()
 
 
-    def remote_ssh(self, stdout, stderr, exit_status, host):
+    def remote_ssh(self, host):
         try:
             config = paramiko.SSHConfig()
             config.parse(open(expanduser("~")+'/.ssh/config'))
             o = config.lookup(host)
-
-            client = paramiko.SSHClient()
-            client.load_system_host_keys()
-            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            client.connect(o['hostname'], username=o['user'], key_filename=o['identityfile'][0])
-
-            stdin_remote, stdout_remote, stderr_remote = client.exec_command(
-            self.command)
-
-            stdout.value = "".join(stdout_remote.readlines())
-            if stderr_remote:
-                stderr.value = "".join(stderr_remote.readlines())
-            exit_status.value = stdout_remote.channel.recv_exit_status()
+            self.remote_client = paramiko.SSHClient()
+            self.remote_client.load_system_host_keys()
+            self.remote_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self.remote_client.connect(o['hostname'], username=o['user'], key_filename=o['identityfile'][0], timeout=82800)
+            self.transport = self.remote_client.get_transport()
+            # self.transport.set_keepalive(5)
+            self.stdin_remote, self.stdout_remote, self.stderr_remote = self.remote_client.exec_command(self.command)
         except Exception as e:
-            stderr.value = str(e)
-            exit_status.value = 1
-        finally:
-            client.close()
+            self.stderr_remote = str(e)
+            self.remote_client.close()
 
 
     def check_complete(self):
         """ Runs completion flow for this task if it's finished. """
-        if self.remote_process and self.remote_process.is_alive():
+        if not self.stdout_remote.channel.exit_status_ready():
+            self._timeout_check()
             self._start_check_timer()
             return
 
         if self.process and self.process.poll() is None:
-            # timeout check
-            if (self.soft_timeout != 0 and
-                (datetime.utcnow() - self.started_at).seconds >= self.soft_timeout and
-                not self.terminate_sent):
-                self.terminate()
-
-            if (self.hard_timeout != 0 and
-                (datetime.utcnow() - self.started_at).seconds >= self.hard_timeout and
-                not self.kill_sent):
-                self.kill()
-
+            self._timeout_check()
             self._start_check_timer()
             return
 
-        if self.remote_process:
-            return_code = self.remote_exit_status.value
-            self.stdout = self.stdout.value
-            self.stderr = self.stderr.value
+        if self.remote_client and self.stdout_remote.channel.exit_status_ready():
+            self.stdout = "".join(self.stdout_remote.read())
+            if self.stderr_remote:
+                self.stderr = "".join(self.stderr_remote.read())
+            return_code = self.stdout_remote.channel.recv_exit_status()
         else:
             return_code = self.process.returncode
             self.stdout, self.stderr = (self._read_temp_file(self.stdout_file),
@@ -816,8 +786,9 @@ class Task(object):
 
     def terminate(self):
         """ Send SIGTERM to the task's process. """
-        if self.remote_process:
-            self.remote_process.terminate()
+        if self.remote_client:
+            self.terminate_sent = True
+            self.transport.close()
             return
         if not self.process:
             raise DagobahError('task does not have a running process')
@@ -827,8 +798,9 @@ class Task(object):
 
     def kill(self):
         """ Send SIGKILL to the task's process. """
-        if self.remote_process:
-            self.remote_process.terminate()
+        if self.remote_client:
+            self.kill_sent = True
+            self.transport.close()
             return
 
         if not self.process:
@@ -882,6 +854,19 @@ class Task(object):
     def get_stderr(self):
         """ Returns the entire stderr output of this process. """
         return self._read_temp_file(self.stderr_file)
+
+
+    def _timeout_check(self):
+        # timeout check
+        if (self.soft_timeout != 0 and
+            (datetime.utcnow() - self.started_at).seconds >= self.soft_timeout and
+            not self.terminate_sent):
+            self.terminate()
+
+        if (self.hard_timeout != 0 and
+            (datetime.utcnow() - self.started_at).seconds >= self.hard_timeout and
+            not self.kill_sent):
+            self.kill()
 
 
     def _map_string_to_file(self, stream):
