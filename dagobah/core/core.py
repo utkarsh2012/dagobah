@@ -738,7 +738,7 @@ class Task(object):
             self.remote_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self.remote_client.connect(o['hostname'], username=o['user'], key_filename=o['identityfile'][0], timeout=82800)
             self.transport = self.remote_client.get_transport()
-            # self.transport.set_keepalive(5)
+            self.transport.set_keepalive(10)
             self.stdin_remote, self.stdout_remote, self.stderr_remote = self.remote_client.exec_command(self.command)
         except Exception as e:
             self.stderr_remote = str(e)
