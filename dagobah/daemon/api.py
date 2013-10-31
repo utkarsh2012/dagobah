@@ -66,7 +66,7 @@ def get_log():
     task = job.tasks.get(args['task_name'], None)
     if not task:
         abort(400)
-    return task.get_log(args['log_id'])
+    return task.get_run_log(args['log_id'])
 
 
 @app.route('/api/head', methods=['GET'])

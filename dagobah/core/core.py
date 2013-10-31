@@ -7,10 +7,6 @@ import threading
 import subprocess
 import json
 import paramiko
-import base64
-import StringIO
-import select
-from multiprocessing import Process, Manager
 from os.path import expanduser
 
 from croniter import croniter
@@ -20,6 +16,8 @@ from dagobah.core.components import Scheduler, JobState, StrictJSONEncoder
 from dagobah.core.components import Scheduler, JobState, Host
 from dagobah.backend.base import BaseBackend
 
+#Fix Python Bug: http://stackoverflow.com/questions/13193278/understand-python-threading-bug
+threading._DummyThread._Thread__stop = lambda x: 42
 
 class DagobahError(Exception):
     pass
@@ -907,12 +905,14 @@ class Task(object):
 
     def _head_string(self, in_str, num_lines):
         """ Returns a list of the first num_lines lines from a string. """
-        return in_str.split('\n')[:num_lines]
+        if in_str:
+            return in_str.split('\n')[:num_lines]
 
 
     def _tail_string(self, in_str, num_lines):
         """ Returns a list of the last num_lines lines from a string. """
-        return in_str.split('\n')[-1 * num_lines :]
+        if in_str:
+            return in_str.split('\n')[-1 * num_lines :]
 
 
     def _head_temp_file(self, temp_file, num_lines):
