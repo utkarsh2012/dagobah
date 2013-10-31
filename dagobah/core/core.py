@@ -295,6 +295,7 @@ class Job(DAG):
         self.cron_iter = None
         self.run_log = None
         self.completion_lock = threading.Lock()
+        self.notes = None
 
         self._set_status('waiting')
 
@@ -470,6 +471,15 @@ class Job(DAG):
         self.parent.commit(cascade=True)
 
 
+    def update_job_notes(self, job_name, notes):
+        if not self.state.allow_edit_job:
+            raise DagobahError('job cannot be edited in its current state')
+
+        setattr(self, 'notes', notes)
+
+        self.parent.commit(cascade=True)
+
+
     def edit_task(self, task_name, **kwargs):
         """ Change the name of a Task owned by this Job.
 
@@ -638,7 +648,8 @@ class Job(DAG):
                                    in self.graph.iteritems()},
                   'status': self.state.status,
                   'cron_schedule': self.cron_schedule,
-                  'next_run': self.next_run}
+                  'next_run': self.next_run,
+                  'notes': self.notes}
 
         if strict_json:
             result = json.loads(json.dumps(result, cls=StrictJSONEncoder))
@@ -839,12 +850,12 @@ class Task(object):
             return self._tail_temp_file(target, num_lines)
 
 
-    def get_log_history(self):
+    def get_run_log_history(self):
         history = self.backend.get_run_log_history(self.parent_job.job_id, self.name)
         return history
 
 
-    def get_log(self, log_id):
+    def get_run_log(self, log_id):
         log = self.backend.get_run_log(self.parent_job.job_id, self.name, log_id)
         return log
 
