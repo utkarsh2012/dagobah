@@ -671,7 +671,8 @@ class Task(object):
         self.command = command
         self.name = name
         self.host_id = host_id
-
+        
+        self.remote_channel = None
         self.process = None
         self.stdout = None
         self.stderr = None
@@ -760,7 +761,7 @@ class Task(object):
 
     def check_complete(self):
         """ Runs completion flow for this task if it's finished. """
-        if not self.remote_channel.exit_status_ready():
+        if self.remote_channel and not self.remote_channel.exit_status_ready():
             self._timeout_check()
             self._start_check_timer()
             return
