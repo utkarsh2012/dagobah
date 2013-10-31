@@ -35,7 +35,7 @@ def get_job():
 @app.route('/api/logs', methods=['GET'])
 @login_required
 @api_call
-def get_log_history():
+def get_run_log_history():
     args = dict(request.args)
     if not validate_dict(args,
                          required=['job_name', 'task_name'],
@@ -47,7 +47,7 @@ def get_log_history():
     task = job.tasks.get(args['task_name'], None)
     if not task:
         abort(400)
-    return task.get_log_history()
+    return task.get_run_log_history()
 
 
 @app.route('/api/log', methods=['GET'])
@@ -353,6 +353,21 @@ def edit_job():
     job = dagobah.get_job(args['job_name'])
     del args['job_name']
     job.edit(**args)
+
+
+@app.route('/api/update_job_notes', methods=['POST'])
+@login_required
+@api_call
+def update_job_notes():
+    args = dict(request.form)
+    if not validate_dict(args,
+                         required=['job_name', 'notes'],
+                         job_name=str,
+                         notes=str):
+        abort(400)
+
+    job = dagobah.get_job(args['job_name'])
+    job.update_job_notes(args['job_name'], args['notes'])
 
 
 @app.route('/api/edit_task', methods=['POST'])
