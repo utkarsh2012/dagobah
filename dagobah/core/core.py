@@ -660,8 +660,7 @@ class Task(object):
         self.command = command
         self.name = name
         self.host_id = host_id
-        self.remote_process = None
-        
+
         self.process = None
         self.stdout = None
         self.stderr = None
@@ -737,11 +736,12 @@ class Task(object):
             self.remote_client.load_system_host_keys()
             self.remote_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self.remote_client.connect(o['hostname'], username=o['user'], key_filename=o['identityfile'][0], timeout=82800)
-            self.transport = self.remote_client.get_transport()
-            chan = t.open_session()
-            chan.get_pty()
-            self.transport.set_keepalive(10)
-            self.stdin_remote, self.stdout_remote, self.stderr_remote = self.remote_client.exec_command(self.command)
+            transport = self.remote_client.get_transport()
+            transport.set_keepalive(10)
+
+            self.remote_channel = transport.open_session()
+            self.remote_channel.get_pty()
+            self.remote_channel.exec_command(self.command)
         except Exception as e:
             self.stderr_remote = str(e)
             self.remote_client.close()
@@ -749,7 +749,7 @@ class Task(object):
 
     def check_complete(self):
         """ Runs completion flow for this task if it's finished. """
-        if not self.stdout_remote.channel.exit_status_ready():
+        if not self.remote_channel.exit_status_ready():
             self._timeout_check()
             self._start_check_timer()
             return
@@ -759,11 +759,11 @@ class Task(object):
             self._start_check_timer()
             return
 
-        if self.remote_client and self.stdout_remote.channel.exit_status_ready():
-            self.stdout = "".join(self.stdout_remote.read())
-            if self.stderr_remote:
-                self.stderr = "".join(self.stderr_remote.read())
-            return_code = self.stdout_remote.channel.recv_exit_status()
+        if self.remote_channel and self.remote_channel.exit_status_ready():
+            self.stdout = "".join(self.remote_channel.recv(1024))
+            if self.remote_channel.recv_stderr_ready():
+                self.stderr = "".join(self.remote_channel.recv_stderr(1024))
+            return_code = self.remote_channel.recv_exit_status()
         else:
             return_code = self.process.returncode
             self.stdout, self.stderr = (self._read_temp_file(self.stdout_file),
@@ -772,9 +772,9 @@ class Task(object):
                 temp_file.close()
 
         if self.terminate_sent:
-            self.stderr += '\nDAGOBAH SENT SIGTERM TO THIS PROCESS\n'
+            self.stderr = '\nDAGOBAH SENT SIGTERM TO THIS PROCESS\n'
         if self.kill_sent:
-            self.stderr += '\nDAGOBAH SENT SIGKILL TO THIS PROCESS\n'
+            self.stderr = '\nDAGOBAH SENT SIGKILL TO THIS PROCESS\n'
 
         self.stdout_file = None
         self.stderr_file = None
@@ -790,7 +790,7 @@ class Task(object):
         """ Send SIGTERM to the task's process. """
         if self.remote_client:
             self.terminate_sent = True
-            self.transport.close()
+            self.remote_client.close()
             return
         if not self.process:
             raise DagobahError('task does not have a running process')
@@ -802,7 +802,7 @@ class Task(object):
         """ Send SIGKILL to the task's process. """
         if self.remote_client:
             self.kill_sent = True
-            self.transport.close()
+            self.remote_client.close()
             return
 
         if not self.process:
