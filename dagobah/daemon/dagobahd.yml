@@ -17,7 +17,7 @@ Dagobahd:
   # None: Dagobah will not use a backend to permanently store data
   # sqlite: use a SQLite database. see the SQLite section in this file
   # mongo: store results in MongoDB. see the MongoBackend section in this file
-  backend: sqlite
+  backend: mongo
 
   # choose one of the available email templates
   # None: Dagobah won't send you emails when a job finishes or fails
