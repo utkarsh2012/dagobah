@@ -508,6 +508,9 @@ class Job(DAG):
         if 'hard_timeout' in kwargs:
             task.set_hard_timeout(kwargs['hard_timeout'])
 
+        if 'host_id' in kwargs:
+            task.set_host_id(kwargs['host_id'])
+            
         if 'name' in kwargs and isinstance(kwargs['name'], str):
             self.rename_edges(task_name, kwargs['name'])
             self.tasks[kwargs['name']] = task
