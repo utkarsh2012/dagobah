@@ -349,7 +349,6 @@ def edit_job():
                          job_name=str,
                          name=str):
         abort(400)
-
     job = dagobah.get_job(args['job_name'])
     del args['job_name']
     job.edit(**args)
@@ -382,7 +381,8 @@ def edit_task():
                          name=str,
                          command=str,
                          soft_timeout=int,
-                         hard_timeout=int):
+                         hard_timeout=int,
+                         host_id=str):
         abort(400)
 
     job = dagobah.get_job(args['job_name'])
