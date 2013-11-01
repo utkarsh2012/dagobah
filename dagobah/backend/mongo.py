@@ -151,3 +151,20 @@ class MongoBackend(BaseBackend):
         for rec in cur:
             return rec
         return {}
+
+    def get_run_log_history(self, job_id, task_name):
+        q = {'job_id': ObjectId(job_id),
+             'tasks.%s' % task_name: {'$exists': True}}
+        cur = self.log_coll.find(q).sort([('save_date', pymongo.DESCENDING)])
+        result = []
+        for rec in cur:
+            result.append(rec)
+        return result
+
+    def get_run_log(self, job_id, task_name, log_id):
+        import ipdb; ipdb.set_trace()
+        q = {'job_id': ObjectId(job_id),
+             'tasks.%s' % task_name: {'$exists': True},
+             'id': ObjectId(log_id)}
+        log = self.log_coll.find(q).find_one()
+        return log
