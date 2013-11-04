@@ -59,7 +59,7 @@ def get_log():
                          required=['job_name', 'task_name', 'log_id'],
                          job_name=str,
                          task_name=str,
-                         log_id=int):
+                         log_id=str):
         abort(400)
 
     job = dagobah.get_job(args['job_name'])
