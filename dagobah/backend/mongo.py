@@ -162,9 +162,10 @@ class MongoBackend(BaseBackend):
         return result
 
     def get_run_log(self, job_id, task_name, log_id):
-        import ipdb; ipdb.set_trace()
+       #or  import ipdb; ipdb.set_trace()
         q = {'job_id': ObjectId(job_id),
              'tasks.%s' % task_name: {'$exists': True},
-             'id': ObjectId(log_id)}
-        log = self.log_coll.find(q).find_one()
-        return log
+             'log_id': ObjectId(log_id)}
+        log = self.log_coll.find(q)
+        for rec in log:
+            return rec['tasks'][task_name]
