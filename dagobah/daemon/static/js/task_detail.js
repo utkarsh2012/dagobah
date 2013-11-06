@@ -146,6 +146,9 @@ function loadHistoryTable() {
 
 function determineRuntime(completion, start){
     var completion_time = new Date(completion).getTime();
+    if (isNaN(completion_time)) {
+        return "Did not complete";
+    }
     var starting_time = new Date(start).getTime();
     var milliseconds = completion_time - starting_time;
     var numhours = Math.floor(milliseconds / 3600000);
