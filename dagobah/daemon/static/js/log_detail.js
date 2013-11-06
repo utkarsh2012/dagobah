@@ -10,7 +10,7 @@ function stdoutLog(stream, onload) {
           function(data) {
               if(typeof(onload)==='undefined') a = false;
               showLogText(stream, data['result'][stream]);
-              if (onload == true){ 
+              if (onload == true){
                  $('#header').text($('#header').text() + ' - ' + data['result']['complete_time']);
               }
           }
@@ -19,11 +19,11 @@ function stdoutLog(stream, onload) {
 
 
 $('#stderr').click(function() {
-    stdoutLog('stderr')
+    stdoutLog('stderr');
 });
 
 $('#stdout').click(function() {
-    stdoutLog('stdout')
+    stdoutLog('stdout');
 });
 
 function showLogText(logType, value) {
