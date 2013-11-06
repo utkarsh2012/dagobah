@@ -14,8 +14,11 @@
   <script id="history-table-template" type="text/x-handlebars-template">
     <tr data-log='{{ historyId }}'>
       {{> historyId }}
-      <td><span data-attr='start_time' data-transform='class title'
-                class={{ timestamp }}></span>
+      <td><span data-attr='completion_time' data-transform='class title'
+                class={{ completionTime }}>{{ completionTime }}</span>
+      </td>
+      <td><span data-attr='runtime' data-transform='class title'
+                class={{ runtime }}>{{ runtime }}</span>
       </td>
       <td>
         <button class='btn btn-primary' onclick="window.location.href = '{{ logURL }}';">View</button>
@@ -123,7 +126,8 @@ Remote host:
 <table class='table table-striped'>
   <thead>
     <th>Run ID</th>
-    <th>Timestamp</th>
+    <th>Completion Time</th>
+    <th>Runtime</th>
     <th></th>
   </thead>
   <tbody id='history-body'>
