@@ -144,12 +144,17 @@ function loadHistoryTable() {
     );
 }
 
+function convertToIsoTime(timestring) {
+    var string_split = timestring.split(" ");
+    var isoTime = string_split[0] + "T" + string_split[1];
+    return isoTime;
+}
+
 function determineRuntime(completion, start){
-    var completion_time = new Date(completion).getTime();
-    if (isNaN(completion_time)) {
-        return "Did not complete";
-    }
-    var starting_time = new Date(start).getTime();
+    var completion_string = convertToIsoTime(completion);
+    var completion_time = new Date(completion_string).getTime();
+    var start_string = convertToIsoTime(start);
+    var starting_time = new Date(start_string).getTime();
     var milliseconds = completion_time - starting_time;
     var numhours = Math.floor(milliseconds / 3600000);
     milliseconds = milliseconds - (numhours * 3600000);
@@ -172,7 +177,12 @@ function renderHistoryTable(data){
         for (var i = 0; i < data.length; i++) {
             var thisJob = data[i];
             var completion_time = thisJob['tasks'][taskName].complete_time;
-            var run_time = determineRuntime(completion_time, thisJob.start_time);
+            var run_time = null;
+            if (completion_time === undefined) {
+                run_time = 'Did not complete.';
+            } else {
+                run_time = determineRuntime(completion_time, thisJob.start_time);
+            }
             $('#history-body').append(
                 historyTableTemplate({
                     historyId: thisJob.log_id,
