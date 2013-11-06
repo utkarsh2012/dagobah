@@ -675,8 +675,8 @@ class Task(object):
         
         self.remote_channel = None
         self.process = None
-        self.stdout = None
-        self.stderr = None
+        self.stdout = ""
+        self.stderr = ""
         self.stdout_file = None
         self.stderr_file = None
 
@@ -688,6 +688,7 @@ class Task(object):
 
         self.terminate_sent = False
         self.kill_sent = False
+        self.failure = False
 
         self.set_soft_timeout(soft_timeout)
         self.set_hard_timeout(hard_timeout)
@@ -729,7 +730,10 @@ class Task(object):
         self.reset()
         if self.host_id:
             host = [host for host in self.parent_job.parent.hosts if str(host.id)==str(self.host_id)]
-            self.remote_ssh(host[0].name)
+            if host:
+                self.remote_ssh(host[0].name)
+            else:
+                self.failure = True
         else:
             self.process = subprocess.Popen(self.command,
                                             shell=True,
@@ -765,6 +769,10 @@ class Task(object):
         if self.remote_channel and not self.remote_channel.exit_status_ready():
             self._timeout_check()
             self._start_check_timer()
+            if self.remote_channel.recv_ready():
+                self.stdout += self.remote_channel.recv(1024)
+            if self.remote_channel.recv_stderr_ready():
+                self.stderr += self.remote_channel.recv_stderr(1024)
             return
 
         if self.process and self.process.poll() is None:
@@ -773,11 +781,12 @@ class Task(object):
             return
 
         if self.remote_channel and self.remote_channel.exit_status_ready():
-            self.stdout = "".join(self.remote_channel.recv(1024))
+            if self.remote_channel.recv_ready():
+                self.stdout += "".join(self.remote_channel.recv(1024))
             if self.remote_channel.recv_stderr_ready():
-                self.stderr = "".join(self.remote_channel.recv_stderr(1024))
+                self.stderr += "".join(self.remote_channel.recv_stderr(1024))
             return_code = self.remote_channel.recv_exit_status()
-        else:
+        elif self.process:
             return_code = self.process.returncode
             self.stdout, self.stderr = (self._read_temp_file(self.stdout_file),
                                         self._read_temp_file(self.stderr_file))
@@ -788,6 +797,9 @@ class Task(object):
             self.stderr = '\nDAGOBAH SENT SIGTERM TO THIS PROCESS\n'
         if self.kill_sent:
             self.stderr = '\nDAGOBAH SENT SIGKILL TO THIS PROCESS\n'
+        if self.failure:
+            return_code = -1
+            self.stderr = '\nAn error occurred.\n'
 
         self.stdout_file = None
         self.stderr_file = None
