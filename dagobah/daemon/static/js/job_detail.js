@@ -233,8 +233,7 @@ function deleteTask(taskName, alertId) {
         },
         error: function() {
             showAlert(alertId, 'error', 'There was an error deleting the task.');
-        },
-        dataType: 'json'
+        }
     });
 
 }
@@ -350,14 +349,15 @@ function resetTasksTable(tableMode) {
     $('#tasks-headers').empty();
     $('#tasks-body').empty();
 
+    var headers=[];
     if (tableMode === 'results') {
-        var headers = ['Task', 'Started', 'Completed', 'Result', ''];
+        headers = ['Task', 'Started', 'Completed', 'Result', ''];
     } else if (tableMode === 'commands') {
-        var headers = ['Task', 'Command', ''];
+        headers = ['Task', 'Command', ''];
     } else if (tableMode === 'timeouts') {
-        var headers = ['Task', 'Soft Timeout', 'Hard Timeout', ''];
+        headers = ['Task', 'Soft Timeout', 'Hard Timeout', ''];
     } else if (tableMode === 'remote') {
-        var headers = ['Task', 'Remote Target', ''];
+        headers = ['Task', 'Remote Target', ''];
     }
 
     for (var i = 0; i < headers.length; i++) {
@@ -541,7 +541,7 @@ $('#save-schedule').click(function() {
 function convertCronTimeZone(fromGmt, cronSchedule) {
     var cdate = new Date();
     var scheduleSplit = cronSchedule.split(" ");
-    var hour = parseInt(scheduleSplit[1]);
+    var hour = parseInt(scheduleSplit[1], 10);
     if (isNaN(hour)) {
         return cronSchedule;
     }
@@ -549,6 +549,9 @@ function convertCronTimeZone(fromGmt, cronSchedule) {
         hour = hour - (cdate.getTimezoneOffset() /  60);
         if (hour < 0) {
             hour = hour + 24;
+            if (scheduleSplit[4] != "*") {
+                scheduleSplit[4] = parseInt(scheduleSplit[4], 10) - 1;
+            }
         }
     } else {
         var offset = cdate.getTimezoneOffset() /  60;
@@ -556,7 +559,7 @@ function convertCronTimeZone(fromGmt, cronSchedule) {
         if (hour >= 24) {   // double check the =
             hour = hour % 24;
             if (scheduleSplit[4] != "*") {
-                scheduleSplit[4] = parseInt(scheduleSplit[4]) + 1;
+                scheduleSplit[4] = parseInt(scheduleSplit[4], 10) + 1;
             }
         }
     }
