@@ -176,12 +176,13 @@ function renderHistoryTable(data){
 
         for (var i = 0; i < data.length; i++) {
             var thisJob = data[i];
+            var start_time = thisJob['tasks'][taskName].start_time;
             var completion_time = thisJob['tasks'][taskName].complete_time;
             var run_time = null;
             if (completion_time === undefined) {
                 run_time = 'Did not complete.';
             } else {
-                run_time = determineRuntime(completion_time, thisJob.start_time);
+                run_time = determineRuntime(completion_time, start_time);
             }
             $('#history-body').append(
                 historyTableTemplate({
