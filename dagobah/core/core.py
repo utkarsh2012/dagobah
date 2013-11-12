@@ -808,12 +808,13 @@ class Task(object):
                             return_code=return_code,
                             stdout = self.stdout,
                             stderr = self.stderr,
+                            start_time = self.started_at,
                             complete_time = datetime.utcnow())
 
 
     def terminate(self):
         """ Send SIGTERM to the task's process. """
-        if self.remote_client:
+        if hasattr(self, 'remote_client'):
             self.terminate_sent = True
             self.remote_client.close()
             return
@@ -825,7 +826,7 @@ class Task(object):
 
     def kill(self):
         """ Send SIGKILL to the task's process. """
-        if self.remote_client:
+        if hasattr(self, 'remote_client'):
             self.kill_sent = True
             self.remote_client.close()
             return
