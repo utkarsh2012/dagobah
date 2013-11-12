@@ -716,6 +716,8 @@ class Task(object):
 
         self.stdout_file = os.tmpfile()
         self.stderr_file = os.tmpfile()
+        self.stdout = ""
+        self.stderr = ""
 
         self.started_at = None
         self.completed_at = None
