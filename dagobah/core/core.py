@@ -808,6 +808,7 @@ class Task(object):
                             return_code=return_code,
                             stdout = self.stdout,
                             stderr = self.stderr,
+                            start_time = self.started_at,
                             complete_time = datetime.utcnow())
 
 
