@@ -1,6 +1,6 @@
 #!/usr/bin/python
 import sys
-sys.path.insert(0,"/home/stack/dagobah")
+sys.path.insert(0,"/PATH/TO/DAGOBAH")
 
 import logging
 from dagobah.daemon.daemon import app, login_manager
