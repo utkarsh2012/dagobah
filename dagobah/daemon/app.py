@@ -17,4 +17,3 @@ def daemon_entrypoint():
 
 if __name__ == '__main__':
     daemon_entrypoint()
-
