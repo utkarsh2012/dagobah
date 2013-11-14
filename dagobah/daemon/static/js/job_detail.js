@@ -135,8 +135,10 @@ function onSaveTaskEditClick() {
 
     var taskName = $(tr).attr('data-task');
 
-    if (original !== null && newValue !== '' &&  original !== newValue) {
-        editTask(taskName, field, newValue);
+    if (original !== null && original !== newValue) {
+        if (field == "Remote Target" || newValue !== '') {
+            editTask(taskName, field, newValue);
+        }
     } else {
         showAlert('table-alert', 'info', 'Task was not changed.');
         newValue = original;
