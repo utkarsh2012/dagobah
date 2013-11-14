@@ -33,9 +33,10 @@ def jobs_import_view():
 @login_required
 def job_detail(job_id=None):
     """ Show a detailed description of a Job's status. """
-    jobs = get_jobs()
-    job = [job for job in jobs if str(job['job_id']) == job_id][0]
-    return render_template('job_detail.html', job=job)
+    jobs = [job for job in get_jobs() if str(job['job_id']) == job_id]
+    if not jobs:
+        abort(404)
+    return render_template('job_detail.html', job=jobs[0])
 
 @app.route('/job/<job_id>/<task_name>', methods=['GET'])
 @login_required
